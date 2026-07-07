@@ -1,0 +1,15 @@
+# Agent scratch directories (opencode / omo / continuation caches)
+.omo/
+.opencode/
+.claude/
+.playwright-mcp/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local node / build artifacts (in case future deps appear)
+node_modules/
+dist/

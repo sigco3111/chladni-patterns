@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chladni Patterns — Sand on a Vibrating Plate</title>
+  <style>
+    :root {
+      --bg-0: #050810;
+      --bg-1: #0a1020;
+      --bg-2: #141b2e;
+      --ink: #e9ecef;
+      --ink-dim: #93a0b8;
+      --accent: #f4c95d;
+      --accent-strong: #ffd166;
+      --line: rgba(244, 201, 93, 0.35);
+      --panel: rgba(20, 27, 46, 0.78);
+      --panel-border: rgba(244, 201, 93, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(ellipse at top, var(--bg-1) 0%, var(--bg-0) 70%);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 32px;
+      gap: 18px;
+    }
+
+    header {
+      text-align: center;
+      max-width: 720px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      letter-spacing: 0.5px;
+      color: var(--accent-strong);
+      font-weight: 600;
+    }
+    h1 span { color: var(--ink-dim); font-weight: 400; font-size: 18px; display: block; margin-top: 4px; }
+    p.lede {
+      margin: 6px 0 0;
+      color: var(--ink-dim);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .stage {
+      position: relative;
+      width: min(92vw, 720px);
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(145deg, #0d1426 0%, #060a16 100%);
+      border-radius: 18px;
+      border: 1px solid var(--panel-border);
+      box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.55),
+        inset 0 0 60px rgba(244, 201, 93, 0.04);
+      overflow: hidden;
+    }
+    .stage::before {
+      content: "";
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0%, transparent 60%, rgba(0,0,0,0.55) 100%);
+      z-index: 2;
+    }
+
+    canvas#stage {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      color: rgba(255, 209, 102, 0.78);
+      pointer-events: none;
+      z-index: 3;
+      background: rgba(5, 8, 16, 0.55);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(244, 201, 93, 0.15);
+      letter-spacing: 0.4px;
+    }
+    .overlay b { color: #fff8e1; font-weight: 600; }
+
+    .controls {
+      width: min(92vw, 720px);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px 18px 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    @media (max-width: 560px) { .controls { grid-template-columns: 1fr; } }
+
+    .ctrl {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ctrl > .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13px;
+      color: var(--ink-dim);
+    }
+    .ctrl > .row b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2a3550, #475174);
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent-strong);
+      box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.18), 0 2px 4px rgba(0,0,0,0.4);
+      cursor: grab;
+      transition: transform 0.1s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.1); }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent-strong);
+      border: none;
+      box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.18), 0 2px 4px rgba(0,0,0,0.4);
+      cursor: grab;
+    }
+
+    .actions { display: flex; gap: 10px; align-items: center; }
+    button {
+      font: inherit;
+      font-size: 13px;
+      background: linear-gradient(180deg, #ffd166 0%, #e2a83a 100%);
+      color: #1a1304;
+      border: 1px solid #c98c1e;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: transform 0.08s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 12px rgba(255, 209, 102, 0.18);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button.secondary {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--panel-border);
+      box-shadow: none;
+    }
+    button.secondary:hover { background: rgba(255, 209, 102, 0.08); }
+
+    .check {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--ink-dim); font-size: 13px; cursor: pointer; user-select: none;
+    }
+    .check input { accent-color: var(--accent-strong); width: 16px; height: 16px; }
+
+    footer {
+      max-width: 720px;
+      font-size: 12px;
+      color: var(--ink-dim);
+      text-align: center;
+      line-height: 1.7;
+      padding: 0 12px;
+    }
+    footer code {
+      background: rgba(255,255,255,0.04);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Chladni Patterns<span>Sand on a vibrating plate · real-time frequency response</span></h1>
+    <p class="lede">
+      사운드로 진동하는 금속 판 위의 모래 입자가 진동이 없는 마디(Node)로 모여 기하학적 무늬를 형성합니다.
+      주파수 슬라이더를 움직이면 패턴이 실시간으로 형태를 바꿉니다.
+    </p>
+  </header>
+
+  <div class="stage" id="stageWrap">
+    <canvas id="stage" aria-label="Chladni pattern visualization"></canvas>
+    <div class="overlay" id="overlay">
+      <div>mode <b id="nm">(n, m)</b></div>
+      <div>fps <b id="fps">–</b></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <div class="row"><label for="freq">Frequency (주파수)</label><b id="freqVal">0.00</b></div>
+      <input id="freq" type="range" min="0" max="100" step="0.01" value="0" />
+    </div>
+
+    <div class="ctrl">
+      <div class="row"><label for="count">Particles (입자 수)</label><b id="countVal">20,000</b></div>
+      <input id="count" type="range" min="2000" max="50000" step="1000" value="20000" />
+    </div>
+
+    <div class="ctrl">
+      <div class="row"><label for="drift">Drift toward node</label><b id="driftVal">50%</b></div>
+      <input id="drift" type="range" min="0" max="100" step="1" value="50" />
+    </div>
+
+    <div class="ctrl">
+      <div class="row"><label for="noise">Plate vibration</label><b id="noiseVal">40%</b></div>
+      <input id="noise" type="range" min="0" max="100" step="1" value="40" />
+    </div>
+
+    <div class="ctrl" style="grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <div class="actions">
+        <button id="reset">↺ Reset Sand</button>
+        <button id="randomize" class="secondary">🎲 Random mode</button>
+        <label class="check"><input type="checkbox" id="trail" checked> trails</label>
+        <label class="check"><input type="checkbox" id="autoAnim" checked> auto-sweep</label>
+      </div>
+      <div style="font-size: 12px; color: var(--ink-dim);">
+        패턴이 자리를 잡는 데 1–3초 정도 걸립니다. 슬라이더를 천천히 움직여 변화를 관찰해 보세요.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Chladni equation:&nbsp;<code>Z(x, y) = cos(nπx)·cos(mπy) − cos(mπx)·cos(nπy)</code>
+    — gradient of |Z| drives each sand grain toward the nearest nodal line.
+  </footer>
+
+<script>
+(() => {
+  'use strict';
+
+  // ───────────────────────────────────────────────────────────────────
+  // Canvas setup with HiDPI support
+  // ───────────────────────────────────────────────────────────────────
+  const stageWrap = document.getElementById('stageWrap');
+  const canvas    = document.getElementById('stage');
+  const ctx       = canvas.getContext('2d', { alpha: false });
+
+  let W = 0, H = 0;     // CSS pixels
+  let PX = 0, PY = 0;   // physical pixels
+
+  function resize() {
+    const rect = stageWrap.getBoundingClientRect();
+    W = Math.floor(rect.width);
+    H = Math.floor(rect.height);
+    PX = W;
+    PY = H;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    needsClear = true;
+  }
+  window.addEventListener('resize', resize);
+
+  // ───────────────────────────────────────────────────────────────────
+  // Chladni equation
+  //   Z(x, y) = cos(nπx)·cos(mπy) − cos(mπx)·cos(nπy)
+  //   ∂Z/∂x   = -nπ·sin(nπx)·cos(mπy) + mπ·sin(mπx)·cos(nπy)
+  //   ∂Z/∂y   = -mπ·cos(nπx)·sin(mπy) + nπ·cos(mπx)·sin(nπy)
+  //
+  // Particles feel  F = −sign(Z)·∇Z  (force toward nearest |Z|=0 line).
+  // A small noise term (∝ |Z|) mimics the random kicks at antinodes.
+  // ───────────────────────────────────────────────────────────────────
+
+  // frequency parameter → (n, m).  Both modes vary as the slider moves;
+  // (n, m) avoided ever equaling (k, k) because Z vanishes there.
+  function freqToMode(f) {
+    // f ∈ [0, 100]
+    const f1 = 1 + Math.floor(f * 0.12);              // 1–12
+    const f2 = 1 + Math.floor((f * 0.79 + 3.7) % 9);  // 1–9
+    let n = Math.min(12, f1);
+    let m = Math.min(12, Math.max(1, f2));
+    if (n === m) m = (m % 12) + 1;
+    return { n, m };
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  // Particle pool (TypedArrays for speed)
+  // ───────────────────────────────────────────────────────────────────
+  const MAX_PARTICLES = 50000;
+  let count = 20000;
+  let px = new Float32Array(MAX_PARTICLES);
+  let py = new Float32Array(MAX_PARTICLES);
+  let vx = new Float32Array(MAX_PARTICLES);
+  let vy = new Float32Array(MAX_PARTICLES);
+  // Each particle stores its current color intensity 0..1 for soft rendering.
+  // Darker when vibrating, brighter once settled on a node.
+
+  function seed() {
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+      px[i] = Math.random();
+      py[i] = Math.random();
+      vx[i] = (Math.random() - 0.5) * 0.004;
+      vy[i] = (Math.random() - 0.5) * 0.004;
+    }
+  }
+  seed();
+
+  // ───────────────────────────────────────────────────────────────────
+  // UI bindings
+  // ───────────────────────────────────────────────────────────────────
+  const freqEl   = document.getElementById('freq');
+  const freqVal  = document.getElementById('freqVal');
+  const countEl  = document.getElementById('count');
+  const countVal = document.getElementById('countVal');
+  const driftEl  = document.getElementById('drift');
+  const driftVal = document.getElementById('driftVal');
+  const noiseEl  = document.getElementById('noise');
+  const noiseVal = document.getElementById('noiseVal');
+  const resetBtn = document.getElementById('reset');
+  const randBtn  = document.getElementById('randomize');
+  const trailEl  = document.getElementById('trail');
+  const autoEl   = document.getElementById('autoAnim');
+  const nmEl     = document.getElementById('nm');
+  const fpsEl    = document.getElementById('fps');
+
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  let driftStrength = 0.5;   // 0..1
+  let noiseStrength = 0.4;   // 0..1
+  let trails = true;
+  let auto = true;
+  let targetFreq = +freqEl.value;
+  let currentFreq = targetFreq;
+
+  freqEl.addEventListener('input', () => {
+    targetFreq = +freqEl.value;
+    currentFreq = targetFreq;        // immediate response for direct drag
+    auto = false;
+    autoEl.checked = false;
+  });
+  countEl.addEventListener('input', () => {
+    count = +countEl.value;
+    countVal.textContent = fmt(count);
+  });
+  driftEl.addEventListener('input', () => {
+    driftStrength = (+driftEl.value) / 100;
+    driftVal.textContent = (+driftEl.value) + '%';
+  });
+  noiseEl.addEventListener('input', () => {
+    noiseStrength = (+noiseEl.value) / 100;
+    noiseVal.textContent = (+noiseEl.value) + '%';
+  });
+  trailEl.addEventListener('change', () => {
+    trails = trailEl.checked;
+    needsClear = true;
+  });
+  autoEl.addEventListener('change', () => { auto = autoEl.checked; });
+  resetBtn.addEventListener('click', () => { seed(); needsClear = true; });
+  randBtn.addEventListener('click', () => {
+    targetFreq = Math.random() * 100;
+    freqEl.value = targetFreq.toFixed(2);
+    auto = false;
+    autoEl.checked = false;
+  });
+
+  // Initial labels
+  freqVal.textContent  = (+freqEl.value).toFixed(2);
+  countVal.textContent = fmt(+countEl.value);
+  driftVal.textContent = (+driftEl.value) + '%';
+  noiseVal.textContent = (+noiseEl.value) + '%';
+
+  // ───────────────────────────────────────────────────────────────────
+  // Animation loop
+  // ───────────────────────────────────────────────────────────────────
+  const PI  = Math.PI;
+  const BG  = 'rgba(8, 13, 24, ';
+  const GOLD = '244, 201, 93';   // rgb triple for sand
+  let needsClear = true;
+  let lastT = performance.now();
+  let fpsAvg = 60;
+  let frame = 0;
+  let animTimer = 0;
+
+  function step() {
+    const now = performance.now();
+    const dt = now - lastT;
+    lastT = now;
+    if (dt > 0) fpsAvg = fpsAvg * 0.92 + (1000 / dt) * 0.08;
+
+    // Smooth auto-sweep of frequency
+    if (auto) {
+      animTimer += dt;
+      targetFreq = 50 + 45 * Math.sin(animTimer * 0.0004);
+      freqEl.value = targetFreq.toFixed(2);
+    }
+    // Ease current freq toward target so visual mode change is fluid
+    currentFreq += (targetFreq - currentFreq) * Math.min(1, dt * 0.008);
+    freqVal.textContent = currentFreq.toFixed(2);
+
+    // Decode (n, m) for current frequency
+    let { n, m } = freqToMode(currentFreq);
+    nmEl.textContent = '(' + n + ', ' + m + ')';
+    if ((frame & 7) === 0) fpsEl.textContent = fpsAvg.toFixed(0);
+
+    // Background: full clear (trails off) OR translucent fade (trails on)
+    if (trails) {
+      ctx.fillStyle = BG + '0.22)';
+      ctx.fillRect(0, 0, W, H);
+    } else if (needsClear) {
+      ctx.fillStyle = BG + '1)';
+      ctx.fillRect(0, 0, W, H);
+      needsClear = false;
+    }
+
+    // ── Physics update ────────────────────────────────────────────
+    const STEP_BASE = 0.00018;             // tuning constant
+    const VEL_DECAY = 0.86;                // 0=no persistence, 1=no decay
+    const driftScale = 0.4 + 1.6 * driftStrength;  // overall pulling
+    const noiseScale = 0.0015 * noiseStrength;
+
+    const N = count;
+    const np = n * PI;
+    const mp = m * PI;
+
+    for (let i = 0; i < N; i++) {
+      const x = px[i], y = py[i];
+
+      // Trig (cached per particle – not precomputable since x,y vary)
+      const cnpix = Math.cos(np * x);
+      const cmpix = Math.cos(mp * x);
+      const cnpiy = Math.cos(np * y);
+      const cmpiy = Math.cos(mp * y);
+
+      const Z = cnpix * cmpiy - cmpix * cnpiy;
+
+      // ∂Z/∂x and ∂Z/∂y
+      const snpix = Math.sin(np * x);
+      const smpix = Math.sin(mp * x);
+      const dZdx = -np * snpix * cmpiy + mp * smpix * cnpiy;
+
+      const smpiy = Math.sin(mp * y);
+      const dZdy = -mp * cnpix * smpiy + np * cmpix * Math.sin(np * y);
+
+      // Force toward node:  F = −sign(Z)·∇Z
+      const signZ = Z >= 0 ? 1 : -1;
+      const fx = -signZ * dZdx;
+      const fy = -signZ * dZdy;
+      const mag = Math.sqrt(fx * fx + fy * fy);
+
+      if (mag > 1e-9) {
+        const step = STEP_BASE * driftScale;
+        vx[i] += (fx / mag) * step;
+        vy[i] += (fy / mag) * step;
+      }
+
+      // Stochastic kicks at antinodes (|Z| large).
+      const zAbs = Z < 0 ? -Z : Z;
+      const kick = noiseScale * (0.15 + 0.85 * zAbs);
+      vx[i] += (Math.random() - 0.5) * 2 * kick;
+      vy[i] += (Math.random() - 0.5) * 2 * kick;
+
+      // Inertia / friction
+      vx[i] *= VEL_DECAY;
+      vy[i] *= VEL_DECAY;
+
+      px[i] += vx[i];
+      py[i] += vy[i];
+
+      // Clamp to plate (sand cannot leave the metal)
+      if (px[i] < 0)   { px[i] = 0;   vx[i] = 0; }
+      if (px[i] > 1)   { px[i] = 1;   vx[i] = 0; }
+      if (py[i] < 0)   { py[i] = 0;   vy[i] = 0; }
+      if (py[i] > 1)   { py[i] = 1;   vy[i] = 0; }
+    }
+
+    // ── Render ────────────────────────────────────────────────────
+    // Brightness tied to |Z|: bright on nodes, dim at antinodes.
+    // Particles on a node get a soft glow halo; off-node particles
+    // are dim (energetic, still bouncing).  Sizes are kept small so
+    // 20k+ points can still draw at 60 FPS.
+    const cx = W * 0.5, cy = H * 0.5;          // canvas centre (unused but useful for debug)
+    for (let pass = 0; pass < 2; pass++) {     // 0 = halo, 1 = core
+      ctx.fillStyle = 'rgb(' + GOLD + ')';
+      for (let i = 0; i < N; i++) {
+        const x = px[i], y = py[i];
+        // Re-evaluate |Z| for rendering brightness.
+        const Z =
+            Math.cos(np * x) * Math.cos(mp * y) -
+            Math.cos(mp * x) * Math.cos(np * y);
+        const zA = Z < 0 ? -Z : Z;
+
+        // Smooth brightness ramp:  1 at node  →  ~0 at antinode.
+        let t = 1.1 - zA * 1.15;
+        if (t < 0.05) t = 0.05;
+        else if (t > 1) t = 1;
+
+        if (pass === 0) {
+          // Halo: drawn wider, very transparent, only on near-node particles
+          const haloA = t * 0.18;
+          if (haloA > 0.02) {
+            ctx.globalAlpha = haloA;
+            ctx.fillRect(x * W - 1.2, y * H - 1.2, 4.4, 4.4);
+          }
+        } else {
+          ctx.globalAlpha = t;
+          ctx.fillRect(x * W, y * H, 1.8, 1.8);
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    frame++;
+    requestAnimationFrame(step);
+  }
+
+  resize();
+  // Initial black background before first loop iteration draws anything
+  ctx.fillStyle = BG + '1)';
+  ctx.fillRect(0, 0, W, H);
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
