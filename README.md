@@ -8,11 +8,11 @@
 
 ## 🎬 라이브 데모 (Live Demo)
 
-> **👉 [https://chladni-patterns-hazel.vercel.app/](https://chladni-patterns-hazel.vercel.app/)** — 브라우저에서 바로 실행 (60fps)
+> **👉 [https://sigco3111.github.io/chladni-patterns/](https://sigco3111.github.io/chladni-patterns/)** — 브라우저에서 바로 실행 (60fps)
 
 | | |
 |---|---|
-| ![Demo](https://img.shields.io/badge/Live-Demo-7C3AED?style=for-the-badge&logo=vercel&logoColor=white) | [![Repo](https://img.shields.io/badge/GitHub-sigco3111%2Fchladni--patterns-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sigco3111/chladni-patterns) |
+| ![Demo](https://img.shields.io/badge/Live-Demo-222222?style=for-the-badge&logo=githubpages&logoColor=white) | [![Repo](https://img.shields.io/badge/GitHub-sigco3111%2Fchladni--patterns-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sigco3111/chladni-patterns) |
 | ![Status](https://img.shields.io/badge/Status-Live-22C55E?style=flat-square) | ![Stack](https://img.shields.io/badge/Stack-Vanilla_JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black) |
 | ![License](https://img.shields.io/badge/License-MIT-F1C40F?style=flat-square) | ![Deps](https://img.shields.io/badge/Dependencies-0-9CA3AF?style=flat-square) |
 
@@ -35,7 +35,7 @@
 | **저장소** | [`sigco3111/chladni-patterns`](https://github.com/sigco3111/chladni-patterns) |
 | **라이선스** | MIT |
 | **의존성** | 없음 (Vanilla JS, 단일 HTML) |
-| **배포** | Vercel (alias: `chladni-patterns-hazel.vercel.app`) |
+| **배포** | GitHub Pages (`sigco3111.github.io/chladni-patterns`) |
 
 ### 📝 사용된 프롬프트 (원문)
 
@@ -67,7 +67,7 @@ towards the nodes (areas close to 0 vibration). 모든 의존관계의 코드를
 ## 🚀 실행 방법 (Quick Start)
 
 ### 방법 1: 라이브 데모 (가장 간단)
-위 [라이브 데모](https://chladni-patterns-hazel.vercel.app/) 링크 클릭 → 별도 설치 없이 바로 확인 가능.
+위 [라이브 데모](https://sigco3111.github.io/chladni-patterns/) 링크 클릭 → 별도 설치 없이 바로 확인 가능.
 
 ### 방법 2: 그냥 브라우저로 열기
 ```bash
